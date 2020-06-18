@@ -1,4 +1,4 @@
-from main import *
+from Desafio_Semana_2 import *
 
 
 def test_q1():
