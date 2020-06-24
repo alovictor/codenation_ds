@@ -6,11 +6,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import GridSearchCV, RepeatedKFold, cross_val_score
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 
 
@@ -72,45 +69,36 @@ df4_teste = df4_teste.fillna(-1)
 #     Configurando pipelines para seleção do algoritmo
 # =============================================================================
 
-x_treino = df1_treino[features_list]
-y_treino = df1_treino['NU_NOTA_MT']
-x_teste = df1_teste[features_list]
+x_treino = df4_treino[features_list]
+y_treino = df4_treino['NU_NOTA_MT']
+x_teste = df4_teste[features_list]
 
 pipelines = []
-pipelines.append(('LR', Pipeline([('Scaler', MinMaxScaler()),('LR',LinearRegression())])))
-pipelines.append(('KNN', Pipeline([('Scaler', MinMaxScaler()),('KNN', KNeighborsRegressor())])))
-pipelines.append(('DTR', Pipeline([('Scaler', MinMaxScaler()),('DTR', DecisionTreeRegressor())])))
-pipelines.append(('GBM', Pipeline([('Scaler', MinMaxScaler()),('GBM', GradientBoostingRegressor())])))
-pipelines.append(('RFR', Pipeline([('Scaler', MinMaxScaler()),('RFR', RandomForestRegressor())])))
+pipelines.append(('GBM', Pipeline([('Scaler', StandardScaler()),('GBM', GradientBoostingRegressor())])))
+pipelines.append(('RFR', Pipeline([('Scaler', StandardScaler()),('RFR', RandomForestRegressor())])))
 
 # =============================================================================
 #     Análise de métricas para seleção algoritmo
 # =============================================================================
 
 def validaPerformanceModelos(pipelines,x_treino,y_treino):
-    results = []
-    names = []
     for name, model in pipelines:
         kfold = RepeatedKFold(n_splits=4, n_repeats= 15, random_state = 0)
         cv_results = cross_val_score(model, x_treino, y_treino, cv=kfold, scoring='neg_mean_squared_error')
-        results.append(cv_results)
-        names.append(name)
-        msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-        print(msg)
+        print(f"{name}:{cv_results.mean()}({cv_results.std()})")
         
 validaPerformanceModelos(pipelines, x_treino, y_treino)
-#os modelos escolhidos foram GradientBoostinRegressor e RandomForestRegressor
 
 # =============================================================================
 #     GradientBoostRegressor
 # =============================================================================
 
-pipe_GBM = Pipeline([('scaler',  StandardScaler()),
+pipe_GBR = Pipeline([('scaler',  StandardScaler()),
             ('GradientBoostingRegressor', GradientBoostingRegressor())])
-CV_pipe_GBM = GridSearchCV(estimator = pipe_GBM, param_grid = {},cv = 5,return_train_score=True, verbose=0)
+CV_pipe_GBR = GridSearchCV(estimator = pipe_GBR, param_grid = {},cv = 5,return_train_score=True, verbose=0)
 
-CV_pipe_GBM.fit(x_treino, y_treino)
-p = CV_pipe_GBM.predict(x_teste)
+CV_pipe_GBR.fit(x_treino, y_treino)
+p1 = CV_pipe_GBR.predict(x_teste)
 
 # =============================================================================
 #     Random Forest Regressor
@@ -123,7 +111,7 @@ CV_pipe_RFR = GridSearchCV(estimator = pipe_RFR, param_grid = {},cv = 5,return_t
 
 
 CV_pipe_RFR.fit(x_treino, y_treino)
-p = CV_pipe_RFR.predict(x_teste)
+p2 = CV_pipe_RFR.predict(x_teste)
 
 # =============================================================================
 #     Criando dataset de respostas
@@ -131,5 +119,5 @@ p = CV_pipe_RFR.predict(x_teste)
 
 df_result = pd.DataFrame()
 df_result['NU_INSCRICAO'] = test_enem['NU_INSCRICAO']
-df_result['NU_NOTA_MT'] = np.around(p, 2)
+df_result['NU_NOTA_MT'] = np.around(p1, 2)
 df_result.to_csv('answer.csv', index= False, header= True)
