@@ -1,2 +1,2 @@
-# codenation_ds
-Aqui terão os desafios resolvidos do AceleraDev Data Science oferecido pela Codenation
+# Acelera Dev Data Science Codenation
+Aqui terão os desafios semanais e o projeto final do AceleraDev.
